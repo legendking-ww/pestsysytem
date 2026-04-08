@@ -1,394 +1,507 @@
 """
-登录注册窗口 - 简洁大气版
+登录注册窗口 - 使用背景图和图标
 """
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+import os
+
 
 class LoginWindow(QWidget):
     """登录窗口类"""
-    
-    # 定义信号
-    login_success = pyqtSignal(dict)  # 登录成功信号，传递用户信息
-    register_request = pyqtSignal()    # 注册请求信号
-    
+
+    login_success = pyqtSignal(dict)
+    register_request = pyqtSignal()
+
     def __init__(self, database):
-        """初始化登录窗口
-        
-        Args:
-            database: 数据库对象
-        """
         super().__init__()
         self.db = database
+        self.bg_image_path = os.path.join('resources', 'background', 'bkg.jpg')
+        self.icon_image_path = os.path.join('resources', 'icons', 'icon.png')
         self.init_ui()
-    
+
     def init_ui(self):
-        """初始化用户界面"""
-        self.setWindowTitle('农林昆虫识别系统 - 登录')
-        self.setFixedSize(480, 620)  # 加大窗口（宽480，高620）
+        self.setWindowTitle('Pest Identification System - Login')
+        self.setFixedSize(520, 680)
         
-        # 设置全局样式表
+        # 设置窗口图标
+        icon = QIcon(self.icon_image_path)
+        self.setWindowIcon(icon)
+
         self.setStyleSheet("""
             QWidget {
-                background-color: #f0f2f5;  /* 浅灰色背景 */
-                font-family: 'Microsoft YaHei', sans-serif;  /* 字体 */
+                background-color: transparent;
+                font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
             }
             QLineEdit {
-                padding: 14px;  /* 加大内边距 */
-                border: 2px solid #e0e0e0;  /* 边框 */
-                border-radius: 10px;  /* 加大圆角 */
-                font-size: 15px;  /* 加大字体 */
-                background-color: white;  /* 白色背景 */
-                min-height: 20px;  /* 最小高度 */
+                padding: 16px 20px;
+                border: 2px solid rgba(255, 255, 255, 0.3);
+                border-radius: 25px;
+                font-size: 16px;
+                background-color: rgba(255, 255, 255, 0.9);
+                color: #333333;
+                selection-background-color: #4a7c4a;
             }
             QLineEdit:focus {
-                border: 2px solid #4CAF50;  /* 焦点时绿色边框 */
+                border: 3px solid #7cb342;
+                background-color: rgba(255, 255, 255, 0.95);
+            }
+            QLineEdit::placeholder {
+                color: #999999;
             }
             QPushButton {
-                padding: 14px;  /* 加大内边距 */
-                border: none;  /* 无边框 */
-                border-radius: 10px;  /* 加大圆角 */
-                font-size: 16px;  /* 加大字体 */
-                font-weight: bold;  /* 粗体 */
-                min-height: 30px;  /* 最小高度 */
+                padding: 16px;
+                border: none;
+                border-radius: 25px;
+                font-size: 18px;
+                font-weight: bold;
+                min-height: 30px;
             }
-            QLabel {
-                color: #2c3e50;  /* 深灰色文字 */
-                font-size: 15px;  /* 加大字体 */
-            }
+
         """)
-        
-        # 主布局（垂直布局）
-        layout = QVBoxLayout()
-        layout.setContentsMargins(50, 40, 50, 40)  # 加大外边距
-        layout.setSpacing(25)  # 加大控件间距
-        
-        # ========== Logo和标题区域 ==========
-        title_layout = QVBoxLayout()
-        title_layout.setSpacing(15)  # 加大内部控件间距
-        
-        # 图标（Emoji）
-        icon_label = QLabel('🌾')
-        icon_label.setAlignment(Qt.AlignCenter)  # 居中对齐
-        icon_label.setStyleSheet("font-size: 70px; color: #4CAF50;")  # 加大图标
-        title_layout.addWidget(icon_label)
-        
-        # 主标题
-        title = QLabel('农林昆虫识别系统')
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 28px; font-weight: bold; color: #1e3c72;")  # 加大标题
-        title_layout.addWidget(title)
-        
-        # 副标题
-        subtitle = QLabel('智慧农业 · 智能识别')
-        subtitle.setAlignment(Qt.AlignCenter)
-        subtitle.setStyleSheet("font-size: 16px; color: #7f8c8d;")  # 加大副标题
-        title_layout.addWidget(subtitle)
-        
-        layout.addLayout(title_layout)
-        layout.addSpacing(30)  # 加大空白间距
-        
-        # ========== 输入区域 ==========
-        input_layout = QVBoxLayout()
-        input_layout.setSpacing(20)  # 加大内部控件间距
-        
-        # 用户名输入
-        username_layout = QVBoxLayout()
-        username_layout.setSpacing(8)  # 加大标签和输入框间距
-        
-        username_label = QLabel('用户名')
-        username_label.setStyleSheet("font-size: 15px; font-weight: 500;")
-        username_layout.addWidget(username_label)
-        
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        bg_label = QLabel()
+        bg_label.setFixedSize(520, 680)
+        bg_pixmap = QPixmap(self.bg_image_path)
+        if not bg_pixmap.isNull():
+            bg_label.setPixmap(bg_pixmap.scaled(520, 680, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
+        else:
+            bg_label.setStyleSheet("background-color: #2d4a2d;")
+
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(40, 40, 40, 40)
+        container_layout.setSpacing(0)
+
+        top_spacer = QWidget()
+        top_spacer.setFixedHeight(100)
+        container_layout.addWidget(top_spacer)
+
+        main_title = QLabel('PEST IDENTIFICATION')
+        main_title.setAlignment(Qt.AlignCenter)
+        main_title.setStyleSheet("""
+            font-size: 32px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 5px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background-color: transparent;
+        """)
+        container_layout.addWidget(main_title)
+
+        sub_title = QLabel('Agricultural and Forestry Insect Recognition')
+        sub_title.setAlignment(Qt.AlignCenter)
+        sub_title.setStyleSheet("""
+            font-size: 13px;
+            color: #e0e0e0;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            background-color: transparent;
+            margin-top: 5px;
+        """)
+        container_layout.addWidget(sub_title)
+
+        spacer2 = QWidget()
+        spacer2.setFixedHeight(50)
+        container_layout.addWidget(spacer2)
+
+        input_container = QWidget()
+        input_container.setStyleSheet("background-color: transparent; border: none;")
+        input_layout = QVBoxLayout(input_container)
+        input_layout.setContentsMargins(20, 0, 20, 0)
+        input_layout.setSpacing(20)
+
         self.username = QLineEdit()
-        self.username.setPlaceholderText('请输入您的用户名')  # 占位文本
-        self.username.setMinimumHeight(45)  # 设置最小高度
+        self.username.setPlaceholderText('Username')
+        self.username.setMinimumHeight(55)
         self.username.setStyleSheet("""
-            QLineEdit {
-                padding: 14px;
-                border: 2px solid #e0e0e0;
-                border-radius: 10px;
-                font-size: 15px;
-            }
+            padding: 16px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 27px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333333;
         """)
-        username_layout.addWidget(self.username)
-        input_layout.addLayout(username_layout)
-        
-        # 密码输入
-        password_layout = QVBoxLayout()
-        password_layout.setSpacing(8)
-        
-        password_label = QLabel('密码')
-        password_label.setStyleSheet("font-size: 15px; font-weight: 500;")
-        password_layout.addWidget(password_label)
-        
+        input_layout.addWidget(self.username)
+
         self.password = QLineEdit()
-        self.password.setPlaceholderText('请输入您的密码')
-        self.password.setEchoMode(QLineEdit.Password)  # 密码模式（显示圆点）
-        self.password.setMinimumHeight(45)  # 设置最小高度
+        self.password.setPlaceholderText('Password')
+        self.password.setEchoMode(QLineEdit.Password)
+        self.password.setMinimumHeight(55)
         self.password.setStyleSheet("""
-            QLineEdit {
-                padding: 14px;
-                border: 2px solid #e0e0e0;
-                border-radius: 10px;
-                font-size: 15px;
-            }
+            padding: 16px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 27px;
+            font-size: 16px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333333;
         """)
-        password_layout.addWidget(self.password)
-        input_layout.addLayout(password_layout)
-        
-        layout.addLayout(input_layout)
-        layout.addSpacing(20)  # 加大空白间距
-        
-        # ========== 按钮区域 ==========
-        btn_layout = QVBoxLayout()
-        btn_layout.setSpacing(15)  # 加大按钮间距
-        
-        # 登录按钮
-        self.login_btn = QPushButton('登 录')
-        self.login_btn.setMinimumHeight(50)  # 设置最小高度
+        input_layout.addWidget(self.password)
+
+        container_layout.addWidget(input_container)
+
+        spacer3 = QWidget()
+        spacer3.setFixedHeight(35)
+        container_layout.addWidget(spacer3)
+
+        btn_container = QWidget()
+        btn_container.setStyleSheet("background-color: transparent; border: none;")
+        btn_layout = QVBoxLayout(btn_container)
+        btn_layout.setContentsMargins(20, 0, 20, 0)
+        btn_layout.setSpacing(15)
+
+        self.login_btn = QPushButton('LOGIN')
+        self.login_btn.setMinimumHeight(55)
         self.login_btn.setStyleSheet("""
             QPushButton {
-                background-color: #4CAF50;  /* 绿色背景 */
-                color: white;
-                font-size: 18px;  /* 加大字体 */
-                padding: 14px;  /* 加大内边距 */
-                border-radius: 10px;
+                background-color: #7cb342;
+                color: #ffffff;
+                font-size: 18px;
                 font-weight: bold;
+                letter-spacing: 2px;
+                border-radius: 27px;
+                border: none;
             }
             QPushButton:hover {
-                background-color: #45a049;  /* 悬停深绿色 */
+                background-color: #8bc34a;
             }
             QPushButton:pressed {
-                background-color: #3d8b40;  /* 按下更深的绿色 */
+                background-color: #689f38;
             }
         """)
         self.login_btn.clicked.connect(self.handle_login)
         btn_layout.addWidget(self.login_btn)
-        
-        # 注册按钮
-        self.register_btn = QPushButton('注册新账号')
-        self.register_btn.setMinimumHeight(50)  # 设置最小高度
+
+        self.register_btn = QPushButton('CREATE ACCOUNT')
+        self.register_btn.setMinimumHeight(50)
         self.register_btn.setStyleSheet("""
             QPushButton {
-                background-color: white;  /* 白色背景 */
-                color: #4CAF50;  /* 绿色文字 */
-                font-size: 16px;
-                padding: 14px;
-                border: 2px solid #4CAF50;  /* 绿色边框 */
-                border-radius: 10px;
+                background-color: rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+                font-size: 15px;
                 font-weight: bold;
+                letter-spacing: 1px;
+                border-radius: 25px;
+                border: 2px solid rgba(255, 255, 255, 0.5);
             }
             QPushButton:hover {
-                background-color: #f0f9f0;  /* 悬停浅绿色背景 */
+                background-color: rgba(255, 255, 255, 0.3);
+                border: 2px solid rgba(255, 255, 255, 0.7);
             }
         """)
-        self.register_btn.clicked.connect(self.register_request.emit)  # 发射注册请求信号
+        self.register_btn.clicked.connect(self.register_request.emit)
         btn_layout.addWidget(self.register_btn)
-        
-        layout.addLayout(btn_layout)
-        
-        # 状态提示标签
+
+        container_layout.addWidget(btn_container)
+
+        spacer4 = QWidget()
+        spacer4.setFixedHeight(25)
+        container_layout.addWidget(spacer4)
+
         self.status_label = QLabel('')
         self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setMinimumHeight(40)  # 设置最小高度
-        self.status_label.setStyleSheet("color: #e74c3c; font-size: 14px; padding: 5px;")
-        layout.addWidget(self.status_label)
-        
-        # 底部版权信息
-        copyright_label = QLabel('© 2026 智能科学与技术专业 · 毕业设计')
-        copyright_label.setAlignment(Qt.AlignCenter)
-        copyright_label.setMinimumHeight(30)  # 设置最小高度
-        copyright_label.setStyleSheet("color: #95a5a6; font-size: 12px; margin-top: 20px;")
-        layout.addWidget(copyright_label)
-        
-        # 回车键登录（密码框按回车触发登录）
+        self.status_label.setStyleSheet("""
+            color: #ff6b6b;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: transparent;
+        """)
+        container_layout.addWidget(self.status_label)
+
+        container_layout.addStretch()
+
+        footer = QLabel('Intelligent Science and Technology')
+        footer.setAlignment(Qt.AlignCenter)
+        footer.setStyleSheet("""
+            color: #cccccc;
+            font-size: 11px;
+            letter-spacing: 1px;
+            background-color: transparent;
+        """)
+        container_layout.addWidget(footer)
+
+        stacked_layout = QStackedLayout()
+        stacked_layout.setStackingMode(QStackedLayout.StackAll)
+        stacked_layout.addWidget(bg_label)
+        stacked_layout.addWidget(container)
+
+        main_layout.addLayout(stacked_layout)
+
         self.password.returnPressed.connect(self.handle_login)
-        
-        self.setLayout(layout)
-    
+
     def handle_login(self):
-        """处理登录逻辑"""
-        username = self.username.text().strip()  # 获取用户名并去除空格
-        password = self.password.text().strip()  # 获取密码并去除空格
-        
-        # 验证输入
+        username = self.username.text().strip()
+        password = self.password.text().strip()
+
         if not username or not password:
-            self.status_label.setText('请输入用户名和密码')
+            self.status_label.setText('Please enter username and password')
             return
-        
-        # 调用数据库登录方法
+
         success, result = self.db.login_user(username, password)
-        
+
         if success:
-            self.login_success.emit(result)  # 登录成功，发射信号
+            self.login_success.emit(result)
         else:
-            self.status_label.setText(result)  # 显示错误信息
-            self.password.clear()  # 清空密码框
+            self.status_label.setText(result)
+            self.password.clear()
 
 
 class RegisterWindow(QWidget):
     """注册窗口类"""
-    
-    register_success = pyqtSignal(str, str)  # 注册成功信号，传递用户名和密码
-    
+
+    register_success = pyqtSignal(str, str)
+    back_to_login = pyqtSignal()
+
     def __init__(self, database):
-        """初始化注册窗口
-        
-        Args:
-            database: 数据库对象
-        """
         super().__init__()
         self.db = database
+        self.bg_image_path = os.path.join('resources', 'background', 'bkg.jpg')
+        self.icon_image_path = os.path.join('resources', 'icons', 'icon.png')
         self.init_ui()
-    
+
     def init_ui(self):
-        """初始化用户界面"""
-        self.setWindowTitle('农林昆虫识别系统 - 注册')
-        self.setFixedSize(480, 680)  # 加大窗口（宽480，高680）
+        self.setWindowTitle('Pest Identification System - Register')
+        self.setFixedSize(520, 750)
         
-        # 设置全局样式表
+        # 设置窗口图标
+        icon = QIcon(self.icon_image_path)
+        self.setWindowIcon(icon)
+
         self.setStyleSheet("""
             QWidget {
-                background-color: #f0f2f5;
-                font-family: 'Microsoft YaHei', sans-serif;
-            }
-            QLineEdit {
-                padding: 14px;  /* 加大内边距 */
-                border: 2px solid #e0e0e0;
-                border-radius: 10px;  /* 加大圆角 */
-                font-size: 15px;  /* 加大字体 */
-                background-color: white;
-                min-height: 20px;  /* 最小高度 */
-            }
-            QLineEdit:focus {
-                border: 2px solid #4CAF50;
-            }
-            QPushButton {
-                padding: 14px;  /* 加大内边距 */
-                border: none;
-                border-radius: 10px;  /* 加大圆角 */
-                font-size: 16px;  /* 加大字体 */
-                font-weight: bold;
-                min-height: 30px;  /* 最小高度 */
-            }
-            QLabel {
-                font-size: 15px;  /* 加大字体 */
+                background-color: transparent;
+                font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
             }
         """)
-        
-        # 主布局（垂直布局）
-        layout = QVBoxLayout()
-        layout.setContentsMargins(50, 40, 50, 40)  # 加大外边距
-        layout.setSpacing(20)  # 加大控件间距
-        
-        # 标题
-        title = QLabel('创建新账号')
-        title.setAlignment(Qt.AlignCenter)
-        title.setStyleSheet("font-size: 30px; font-weight: bold; color: #1e3c72; margin-bottom: 15px;")  # 加大标题
-        layout.addWidget(title)
-        
-        # 用户名输入
-        layout.addWidget(QLabel('用户名'))
+
+        main_layout = QVBoxLayout(self)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        bg_label = QLabel()
+        bg_label.setFixedSize(520, 750)
+        bg_pixmap = QPixmap(self.bg_image_path)
+        if not bg_pixmap.isNull():
+            bg_label.setPixmap(bg_pixmap.scaled(520, 750, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
+        else:
+            bg_label.setStyleSheet("background-color: #2d4a2d;")
+
+        container = QWidget()
+        container_layout = QVBoxLayout(container)
+        container_layout.setContentsMargins(40, 40, 40, 40)
+        container_layout.setSpacing(0)
+
+        top_spacer = QWidget()
+        top_spacer.setFixedHeight(50)
+        container_layout.addWidget(top_spacer)
+
+        title_icon_label = QLabel()
+        title_icon_label.setAlignment(Qt.AlignCenter)
+        title_icon_label.setFixedSize(90, 90)
+        title_icon_label.setStyleSheet("background-color: transparent; border: none;")
+        icon_pixmap = QPixmap(self.icon_image_path)
+        if not icon_pixmap.isNull():
+            icon_scaled = icon_pixmap.scaled(90, 90, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+            title_icon_label.setPixmap(icon_scaled)
+        else:
+            title_icon_label.setText('ICON')
+        container_layout.addWidget(title_icon_label)
+
+        spacer1 = QWidget()
+        spacer1.setFixedHeight(20)
+        container_layout.addWidget(spacer1)
+
+        main_title = QLabel('CREATE ACCOUNT')
+        main_title.setAlignment(Qt.AlignCenter)
+        main_title.setStyleSheet("""
+            font-size: 26px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            background-color: transparent;
+        """)
+        container_layout.addWidget(main_title)
+
+        sub_title = QLabel('Join our pest identification platform')
+        sub_title.setAlignment(Qt.AlignCenter)
+        sub_title.setStyleSheet("""
+            font-size: 12px;
+            color: #e0e0e0;
+            letter-spacing: 1px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            background-color: transparent;
+            margin-top: 5px;
+        """)
+        container_layout.addWidget(sub_title)
+
+        spacer2 = QWidget()
+        spacer2.setFixedHeight(35)
+        container_layout.addWidget(spacer2)
+
+        input_container = QWidget()
+        input_container.setStyleSheet("background-color: transparent; border: none;")
+        input_layout = QVBoxLayout(input_container)
+        input_layout.setContentsMargins(20, 0, 20, 0)
+        input_layout.setSpacing(18)
+
         self.username = QLineEdit()
-        self.username.setPlaceholderText('4-20位字符，字母或数字')
-        self.username.setMinimumHeight(45)  # 设置最小高度
-        layout.addWidget(self.username)
-        
-        # 密码输入
-        layout.addWidget(QLabel('密码'))
+        self.username.setPlaceholderText('Username (4-20 characters)')
+        self.username.setMinimumHeight(52)
+        self.username.setStyleSheet("""
+            padding: 14px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 26px;
+            font-size: 15px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333333;
+        """)
+        input_layout.addWidget(self.username)
+
         self.password = QLineEdit()
-        self.password.setPlaceholderText('6-20位字符')
-        self.password.setEchoMode(QLineEdit.Password)  # 密码模式
-        self.password.setMinimumHeight(45)  # 设置最小高度
-        layout.addWidget(self.password)
-        
-        # 确认密码输入
-        layout.addWidget(QLabel('确认密码'))
+        self.password.setPlaceholderText('Password (6-20 characters)')
+        self.password.setEchoMode(QLineEdit.Password)
+        self.password.setMinimumHeight(52)
+        self.password.setStyleSheet("""
+            padding: 14px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 26px;
+            font-size: 15px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333333;
+        """)
+        input_layout.addWidget(self.password)
+
         self.confirm_password = QLineEdit()
-        self.confirm_password.setPlaceholderText('请再次输入密码')
+        self.confirm_password.setPlaceholderText('Confirm Password')
         self.confirm_password.setEchoMode(QLineEdit.Password)
-        self.confirm_password.setMinimumHeight(45)  # 设置最小高度
-        layout.addWidget(self.confirm_password)
-        
-        layout.addSpacing(20)  # 加大空白间距
-        
-        # 注册按钮
-        self.register_btn = QPushButton('注 册')
-        self.register_btn.setMinimumHeight(50)  # 设置最小高度
+        self.confirm_password.setMinimumHeight(52)
+        self.confirm_password.setStyleSheet("""
+            padding: 14px 24px;
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 26px;
+            font-size: 15px;
+            background-color: rgba(255, 255, 255, 0.95);
+            color: #333333;
+        """)
+        input_layout.addWidget(self.confirm_password)
+
+        container_layout.addWidget(input_container)
+
+        spacer3 = QWidget()
+        spacer3.setFixedHeight(30)
+        container_layout.addWidget(spacer3)
+
+        btn_container = QWidget()
+        btn_container.setStyleSheet("background-color: transparent; border: none;")
+        btn_layout = QVBoxLayout(btn_container)
+        btn_layout.setContentsMargins(20, 0, 20, 0)
+        btn_layout.setSpacing(12)
+
+        self.register_btn = QPushButton('REGISTER')
+        self.register_btn.setMinimumHeight(52)
         self.register_btn.setStyleSheet("""
             QPushButton {
-                background-color: #4CAF50;
-                color: white;
-                font-size: 18px;  /* 加大字体 */
-                padding: 14px;
-                border-radius: 10px;
+                background-color: #7cb342;
+                color: #ffffff;
+                font-size: 18px;
                 font-weight: bold;
+                letter-spacing: 2px;
+                border-radius: 26px;
+                border: none;
             }
             QPushButton:hover {
-                background-color: #45a049;
+                background-color: #8bc34a;
+            }
+            QPushButton:pressed {
+                background-color: #689f38;
             }
         """)
         self.register_btn.clicked.connect(self.handle_register)
-        layout.addWidget(self.register_btn)
-        
-        # 返回登录按钮
-        self.back_btn = QPushButton('返回登录')
-        self.back_btn.setMinimumHeight(40)  # 设置最小高度
+        btn_layout.addWidget(self.register_btn)
+
+        self.back_btn = QPushButton('BACK TO LOGIN')
+        self.back_btn.setMinimumHeight(48)
         self.back_btn.setStyleSheet("""
             QPushButton {
-                background-color: transparent;  /* 透明背景 */
-                color: #7f8c8d;  /* 灰色文字 */
-                font-size: 15px;
-                padding: 10px;  /* 加大内边距 */
-                border: none;
+                background-color: rgba(255, 255, 255, 0.2);
+                color: #ffffff;
+                font-size: 14px;
+                font-weight: bold;
+                letter-spacing: 1px;
+                border-radius: 24px;
+                border: 2px solid rgba(255, 255, 255, 0.5);
             }
             QPushButton:hover {
-                color: #4CAF50;  /* 悬停绿色文字 */
+                background-color: rgba(255, 255, 255, 0.3);
+                border: 2px solid rgba(255, 255, 255, 0.7);
             }
         """)
-        self.back_btn.clicked.connect(self.close)  # 点击关闭窗口
-        layout.addWidget(self.back_btn)
-        
-        # 状态提示标签
+        self.back_btn.clicked.connect(self.back_to_login.emit)
+        btn_layout.addWidget(self.back_btn)
+
+        container_layout.addWidget(btn_container)
+
+        spacer4 = QWidget()
+        spacer4.setFixedHeight(20)
+        container_layout.addWidget(spacer4)
+
         self.status_label = QLabel('')
         self.status_label.setAlignment(Qt.AlignCenter)
-        self.status_label.setMinimumHeight(40)  # 设置最小高度
-        self.status_label.setStyleSheet("color: #e74c3c; font-size: 14px; padding: 5px;")
-        layout.addWidget(self.status_label)
-        
-        layout.addStretch()  # 添加伸缩因子，将控件推向上方
-        self.setLayout(layout)
-    
+        self.status_label.setStyleSheet("""
+            color: #ff6b6b;
+            font-size: 14px;
+            font-weight: bold;
+            background-color: transparent;
+        """)
+        container_layout.addWidget(self.status_label)
+
+        container_layout.addStretch()
+
+        footer = QLabel('Intelligent Science and Technology')
+        footer.setAlignment(Qt.AlignCenter)
+        footer.setStyleSheet("""
+            color: #cccccc;
+            font-size: 11px;
+            letter-spacing: 1px;
+            background-color: transparent;
+        """)
+        container_layout.addWidget(footer)
+
+        stacked_layout = QStackedLayout()
+        stacked_layout.setStackingMode(QStackedLayout.StackAll)
+        stacked_layout.addWidget(bg_label)
+        stacked_layout.addWidget(container)
+
+        main_layout.addLayout(stacked_layout)
+
     def handle_register(self):
-        """处理注册逻辑"""
         username = self.username.text().strip()
         password = self.password.text().strip()
         confirm = self.confirm_password.text().strip()
-        
-        # 验证用户名长度
+
         if len(username) < 4:
-            self.status_label.setText('用户名至少4位')
+            self.status_label.setText('Username must be at least 4 characters')
             return
-        
-        # 验证密码长度
+
         if len(password) < 6:
-            self.status_label.setText('密码至少6位')
+            self.status_label.setText('Password must be at least 6 characters')
             return
-        
-        # 验证两次密码是否一致
+
         if password != confirm:
-            self.status_label.setText('两次密码不一致')
+            self.status_label.setText('Passwords do not match')
             return
-        
-        # 调用数据库注册方法
+
         success, result = self.db.register_user(username, password)
-        
+
         if success:
-            # 注册成功提示
-            QMessageBox.information(self, '注册成功', '账号创建成功！请登录')
-            self.register_success.emit(username, password)  # 发射注册成功信号
-            self.close()  # 关闭注册窗口
+            QMessageBox.information(self, 'Success', 'Account created successfully! Please login.')
+            self.register_success.emit(username, password)
+            self.close()
         else:
-            self.status_label.setText(result)  # 显示错误信息
+            self.status_label.setText(result)
