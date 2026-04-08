@@ -42,7 +42,7 @@ class Database:
         
         conn.commit()
         conn.close()
-        print("✅ 数据库初始化完成")
+        print("数据库初始化完成")
     
     def register_user(self, username, password, email=''):
         """用户注册"""
@@ -118,3 +118,29 @@ class Database:
                 'results': json.loads(r[4])
             })
         return history
+    
+    def clear_user_history(self, user_id):
+        """清空用户的所有历史记录"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM detection_history WHERE user_id=?",
+            (user_id,)
+        )
+        conn.commit()
+        deleted_count = cursor.rowcount
+        conn.close()
+        return deleted_count
+    
+    def delete_history_record(self, record_id, user_id):
+        """删除指定的历史记录"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        cursor.execute(
+            "DELETE FROM detection_history WHERE id=? AND user_id=?",
+            (record_id, user_id)
+        )
+        conn.commit()
+        deleted = cursor.rowcount > 0
+        conn.close()
+        return deleted

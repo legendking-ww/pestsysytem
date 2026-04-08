@@ -468,6 +468,13 @@ class HistoryWindow(QWidget):
             self.table.setItem(i, 3, count_item)
             
             # 操作列 - 使用现代风格的按钮
+            btn_container = QWidget()
+            btn_layout = QHBoxLayout(btn_container)
+            btn_layout.setContentsMargins(0, 0, 0, 0)
+            btn_layout.setAlignment(Qt.AlignCenter)
+            btn_layout.setSpacing(8)
+            
+            # 查看详情按钮
             view_btn = QPushButton('查看详情')
             view_btn.setCursor(Qt.PointingHandCursor)
             view_btn.setStyleSheet("""
@@ -485,13 +492,27 @@ class HistoryWindow(QWidget):
                 }
             """)
             view_btn.clicked.connect(lambda checked, r=record: self.show_detail(r))
-            
-            # 将按钮放入容器以实现居中对齐
-            btn_container = QWidget()
-            btn_layout = QHBoxLayout(btn_container)
-            btn_layout.setContentsMargins(0, 0, 0, 0)
-            btn_layout.setAlignment(Qt.AlignCenter)
             btn_layout.addWidget(view_btn)
+            
+            # 删除按钮
+            delete_btn = QPushButton('删除')
+            delete_btn.setCursor(Qt.PointingHandCursor)
+            delete_btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #ef4444;
+                    color: white;
+                    border: none;
+                    padding: 6px 12px;
+                    border-radius: 6px;
+                    font-size: 12px;
+                    font-weight: 500;
+                }
+                QPushButton:hover {
+                    background-color: #dc2626;
+                }
+            """)
+            delete_btn.clicked.connect(lambda checked, r=record: self.delete_record(r))
+            btn_layout.addWidget(delete_btn)
             
             self.table.setCellWidget(i, 4, btn_container)
     
@@ -720,5 +741,57 @@ class HistoryWindow(QWidget):
         reply = msg_box.exec_()
         
         if reply == QMessageBox.Yes:
-            # 这里需要数据库支持删除操作
-            QMessageBox.information(self, '提示', '清空功能开发中...\n即将支持永久删除记录')
+            try:
+                # 调用数据库方法清空历史记录
+                deleted_count = self.db.clear_user_history(self.user_id)
+                
+                # 重新加载历史记录
+                self.load_history()
+                
+                QMessageBox.information(
+                    self, '操作成功', 
+                    f'✅ 已成功清空 {deleted_count} 条历史记录'
+                )
+            except Exception as e:
+                QMessageBox.critical(self, '操作失败', f'❌ 清空历史记录失败：\n{str(e)}')
+    
+    def delete_record(self, record):
+        """删除单个历史记录"""
+        # 创建确认对话框
+        msg_box = QMessageBox(self)
+        msg_box.setWindowTitle('确认删除')
+        msg_box.setText('⚠️ 确定要删除这条历史记录吗？')
+        msg_box.setInformativeText(f'图片：{record["image_name"]}\n时间：{str(record["time"])[:19]}')
+        msg_box.setIcon(QMessageBox.Warning)
+        msg_box.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        msg_box.setDefaultButton(QMessageBox.No)
+        
+        # 设置按钮样式
+        yes_btn = msg_box.button(QMessageBox.Yes)
+        yes_btn.setText('是的，删除')
+        yes_btn.setStyleSheet("background-color: #ef4444;")
+        
+        no_btn = msg_box.button(QMessageBox.No)
+        no_btn.setText('取消')
+        
+        reply = msg_box.exec_()
+        
+        if reply == QMessageBox.Yes:
+            try:
+                # 调用数据库方法删除指定记录
+                success = self.db.delete_history_record(record['id'], self.user_id)
+                
+                if success:
+                    # 重新加载历史记录
+                    self.load_history()
+                    QMessageBox.information(
+                        self, '操作成功', 
+                        '✅ 已成功删除该历史记录'
+                    )
+                else:
+                    QMessageBox.warning(
+                        self, '操作失败', 
+                        '❌ 删除失败，记录可能不存在或无权限'
+                    )
+            except Exception as e:
+                QMessageBox.critical(self, '操作失败', f'❌ 删除记录失败：\n{str(e)}')
