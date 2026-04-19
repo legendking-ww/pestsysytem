@@ -2,7 +2,6 @@
 主窗口 - 左中右三栏布局（使用背景图和角标）
 """
 
-from backend.resource_monitor import ResourceMonitor
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -11,6 +10,7 @@ import cv2
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from backend.resource_monitor import ResourceMonitor
 from backend.model_service import ModelService
 from backend.database import Database
 from ui.history_window import HistoryWindow
@@ -238,6 +238,45 @@ class MainWindow(QMainWindow):
         self.history_btn.clicked.connect(self.show_history)
         left_layout.addWidget(self.history_btn)
 
+        # 级联推理模式开关
+        cascade_frame = QFrame()
+        cascade_frame.setStyleSheet("background-color: transparent;")
+        cascade_layout = QHBoxLayout(cascade_frame)
+        cascade_layout.setContentsMargins(0, 0, 0, 0)
+        cascade_layout.setSpacing(8)
+
+        self.cascade_checkbox = QCheckBox()
+        self.cascade_checkbox.setChecked(True)
+        self.cascade_checkbox.setStyleSheet("""
+            QCheckBox {
+                spacing: 8px;
+            }
+            QCheckBox::indicator {
+                width: 20px;
+                height: 20px;
+            }
+            QCheckBox::indicator::unchecked {
+                border: 2px solid #cccccc;
+                border-radius: 10px;
+                background-color: white;
+            }
+            QCheckBox::indicator::checked {
+                border: 2px solid #7cb342;
+                border-radius: 10px;
+                background-color: #7cb342;
+            }
+        """)
+        self.cascade_checkbox.stateChanged.connect(self.toggle_cascade_mode)
+
+        cascade_label = QLabel('Cascade Inference')
+        cascade_label.setStyleSheet("font-size: 14px; color: #333333; background-color: transparent;")
+
+        cascade_layout.addWidget(self.cascade_checkbox)
+        cascade_layout.addWidget(cascade_label)
+        cascade_layout.addStretch()
+
+        left_layout.addWidget(cascade_frame)
+
         left_layout.addStretch()
 
         # 提示
@@ -363,19 +402,60 @@ class MainWindow(QMainWindow):
         time_layout.setSpacing(5)
         time_layout.setAlignment(Qt.AlignCenter)
 
-        time_label = QLabel('PROCESS TIME')
+        time_label = QLabel('PROCESSING')
         time_label.setAlignment(Qt.AlignCenter)
-        time_label.setStyleSheet("color: #3b82f6; font-size: 11px; font-weight: bold; letter-spacing: 1px; background-color: transparent;")
+        time_label.setStyleSheet("color: #666666; font-size: 11px; font-weight: bold; letter-spacing: 1px; background-color: transparent;")
 
         self.time_value = QLabel('0ms')
         self.time_value.setAlignment(Qt.AlignCenter)
-        self.time_value.setStyleSheet("font-size: 22px; color: #3b82f6; font-weight: bold; background-color: transparent;")
+        self.time_value.setStyleSheet("font-size: 34px; font-weight: bold; color: #666666; background-color: transparent;")
 
         time_layout.addWidget(time_label)
         time_layout.addWidget(self.time_value)
         stats_layout.addWidget(time_widget)
 
         right_layout.addWidget(stats_card)
+
+        # 级联推理信息栏
+        self.cascade_info_bar = QFrame()
+        self.cascade_info_bar.setStyleSheet("""
+            QFrame {
+                background-color: rgba(255, 255, 255, 0.95);
+                border: 1px solid rgba(200, 200, 200, 0.5);
+                border-radius: 12px;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            }
+        """)
+        cascade_info_layout = QVBoxLayout(self.cascade_info_bar)
+        cascade_info_layout.setContentsMargins(20, 20, 20, 20)
+        cascade_info_layout.setSpacing(12)
+
+        # 标题
+        cascade_title = QLabel('CASCADE INFERENCE')
+        cascade_title.setStyleSheet("font-size: 12px; font-weight: bold; color: #7cb342; letter-spacing: 1px; background-color: transparent;")
+        cascade_info_layout.addWidget(cascade_title)
+
+        # 害虫类别
+        self.category_label = QLabel('Pest Category: -')
+        self.category_label.setStyleSheet("font-size: 15px; color: #333333; background-color: transparent;")
+        cascade_info_layout.addWidget(self.category_label)
+
+        # 置信度
+        self.confidence_label = QLabel('Confidence: -')
+        self.confidence_label.setStyleSheet("font-size: 15px; color: #333333; background-color: transparent;")
+        cascade_info_layout.addWidget(self.confidence_label)
+
+        # 最佳匹配
+        self.best_match_label = QLabel('Best Match: -')
+        self.best_match_label.setStyleSheet("font-size: 15px; color: #333333; background-color: transparent;")
+        cascade_info_layout.addWidget(self.best_match_label)
+
+        # 一致性
+        self.consistency_label = QLabel('Consistency: -')
+        self.consistency_label.setStyleSheet("font-size: 15px; color: #333333; background-color: transparent;")
+        cascade_info_layout.addWidget(self.consistency_label)
+
+        right_layout.addWidget(self.cascade_info_bar)
 
         # 结果标签页
         self.result_tab = QTabWidget()
@@ -502,6 +582,54 @@ class MainWindow(QMainWindow):
         detail_layout.addWidget(self.result_table)
         self.result_tab.addTab(detail_widget, "Detection Details")
 
+        # 级联推理标签
+        cascade_widget = QWidget()
+        cascade_widget.setStyleSheet("background-color: transparent;")
+        cascade_layout = QVBoxLayout(cascade_widget)
+        cascade_layout.setContentsMargins(8, 8, 8, 8)
+
+        self.cascade_table = QTableWidget()
+        self.cascade_table.setColumnCount(2)
+        self.cascade_table.setHorizontalHeaderLabels(['Item', 'Value'])
+
+        header = self.cascade_table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Fixed)
+        header.setSectionResizeMode(1, QHeaderView.Stretch)
+
+        self.cascade_table.setColumnWidth(0, 120)
+        self.cascade_table.setAlternatingRowColors(True)
+        self.cascade_table.verticalHeader().setDefaultSectionSize(38)
+        self.cascade_table.setStyleSheet("""
+            QTableWidget {
+                background-color: rgba(255, 255, 255, 0.9);
+                border: 1px solid rgba(200, 200, 200, 0.3);
+                border-radius: 8px;
+                gridline-color: rgba(240, 240, 240, 0.8);
+                font-size: 13px;
+                color: #333333;
+            }
+            QTableWidget::item {
+                padding: 10px;
+                border-bottom: 1px solid rgba(240, 240, 240, 0.8);
+            }
+            QTableWidget::item:selected {
+                background-color: rgba(124, 179, 66, 0.2);
+                color: #333333;
+            }
+            QHeaderView::section {
+                background-color: rgba(240, 244, 240, 0.95);
+                padding: 12px;
+                border: none;
+                border-bottom: 2px solid #7cb342;
+                font-weight: bold;
+                color: #333333;
+                font-size: 12px;
+            }
+        """)
+
+        cascade_layout.addWidget(self.cascade_table)
+        self.result_tab.addTab(cascade_widget, "Cascade Inference")
+
         right_layout.addWidget(self.result_tab, 1)
 
         return right_panel
@@ -527,7 +655,8 @@ class MainWindow(QMainWindow):
         self.history_table.selectRow(row)
         self.current_record_index = row
         self.load_history_record(record)
-        self.result_tab.setCurrentIndex(1)
+        # 切换到级联推理标签页，以便用户直接看到级联推理结果
+        self.result_tab.setCurrentIndex(2)
 
     def load_history_record(self, record):
         if os.path.exists(record['result_path']):
@@ -541,6 +670,34 @@ class MainWindow(QMainWindow):
 
         self.total_value.setText(str(record['total_count']))
         self.time_value.setText(f"{record['process_time']*1000:.0f}ms")
+
+        # 显示害虫类别信息
+        if 'pest_category_info' in record and record['pest_category_info']:
+            category_info = record['pest_category_info']
+            if category_info['name']:
+                category_text = f"🐛 害虫类别: {category_info['name']} ({category_info['confidence']:.2%})"
+                self.statusBar().showMessage(f'{category_text} | 检测到 {record["total_count"]} 种害虫')
+                
+                # 更新级联推理信息栏
+                self.category_label.setText(f'Pest Category: {category_info["name"]}')
+                self.confidence_label.setText(f'Confidence: {category_info["confidence"]:.2%}')
+                
+                if 'best_match' in record and record['best_match']:
+                    self.best_match_label.setText(f'Best Match: {record["best_match"]["class_name"]}')
+                else:
+                    self.best_match_label.setText('Best Match: -')
+                
+                if 'has_consistent_pest' in record:
+                    consistency = 'Consistent' if record['has_consistent_pest'] else 'Inconsistent'
+                    self.consistency_label.setText(f'Consistency: {consistency}')
+                else:
+                    self.consistency_label.setText('Consistency: -')
+        else:
+            # 清空级联推理信息栏
+            self.category_label.setText('Pest Category: -')
+            self.confidence_label.setText('Confidence: -')
+            self.best_match_label.setText('Best Match: -')
+            self.consistency_label.setText('Consistency: -')
 
         detections = record['detections']
         self.result_table.setRowCount(len(detections))
@@ -558,6 +715,40 @@ class MainWindow(QMainWindow):
             conf_item.setForeground(QBrush(QColor(124, 179, 66)))
             conf_item.setTextAlignment(Qt.AlignCenter)
             self.result_table.setItem(i, 2, conf_item)
+
+        # 显示级联推理结果
+        self.cascade_table.setRowCount(0)
+        if 'pest_category_info' in record and record['pest_category_info']:
+            category_info = record['pest_category_info']
+            if category_info['name']:
+                # 添加害虫类别信息
+                row = self.cascade_table.rowCount()
+                self.cascade_table.insertRow(row)
+                self.cascade_table.setItem(row, 0, QTableWidgetItem('Pest Category'))
+                self.cascade_table.setItem(row, 1, QTableWidgetItem(f"{category_info['name']}\nConfidence: {category_info['confidence']:.2%}"))
+
+                # 添加最佳匹配害虫
+                if 'best_match' in record:
+                    best_match = record.get('best_match')
+                    if best_match:
+                        row = self.cascade_table.rowCount()
+                        self.cascade_table.insertRow(row)
+                        self.cascade_table.setItem(row, 0, QTableWidgetItem('Best Match'))
+                        self.cascade_table.setItem(row, 1, QTableWidgetItem(f"{best_match['class_name']}\nConfidence: {best_match['confidence']:.2%}"))
+
+                # 添加一致性信息
+                if 'has_consistent_pest' in record:
+                    row = self.cascade_table.rowCount()
+                    self.cascade_table.insertRow(row)
+                    self.cascade_table.setItem(row, 0, QTableWidgetItem('Consistency'))
+                    consistency = 'Consistent' if record.get('has_consistent_pest', False) else 'Inconsistent'
+                    self.cascade_table.setItem(row, 1, QTableWidgetItem(consistency))
+        else:
+            # 没有级联推理结果
+            row = self.cascade_table.rowCount()
+            self.cascade_table.insertRow(row)
+            self.cascade_table.setItem(row, 0, QTableWidgetItem('Status'))
+            self.cascade_table.setItem(row, 1, QTableWidgetItem('Cascade inference not enabled'))
 
         self.file_name_label.setText(os.path.basename(record['image_path']))
 
@@ -609,13 +800,76 @@ class MainWindow(QMainWindow):
         if 'error' in result:
             QMessageBox.critical(self, 'Error', result['error'])
         else:
+            # 检查是否有害虫类别信息
+            pest_category_info = None
+            if 'cascade' in result:
+                cascade_data = result['cascade']
+                pest_category_info = cascade_data['pest_category']
+                if pest_category_info['name']:
+                    # 在状态栏显示害虫类别信息
+                    category_text = f"🐛 害虫类别: {pest_category_info['name']} ({pest_category_info['confidence']:.2%})"
+                    self.statusBar().showMessage(f'{category_text} | 检测到 {result["total_count"]} 种害虫')
+                    # 显示级联推理结果的详细信息
+                    msg_box = QMessageBox(self)
+                    msg_box.setWindowTitle('级联推理结果')
+                    msg_box.setIcon(QMessageBox.Information)
+                    msg_box.setTextFormat(Qt.RichText)
+                    msg_box.setText(
+                        f'<h3>级联推理结果</h3>'
+                        f'<p style="font-size: 14px;">'
+                        f'害虫类别: <b>{pest_category_info["name"]}</b><br>'
+                        f'置信度: <b>{pest_category_info["confidence"]:.2%}</b><br>'
+                        f'最佳匹配: <b>{cascade_data["best_match"]["class_name"] if cascade_data["best_match"] else "无"}</b><br>'
+                        f'一致性: <b>{"一致" if cascade_data["has_consistent_pest"] else "不一致"}</b><br>'
+                        f'</p>'
+                    )
+                    msg_box.setStandardButtons(QMessageBox.Ok)
+                    msg_box.setStyleSheet('''
+                        QMessageBox {
+                            background-color: #f5f5f5;
+                            border: 1px solid #e0e0e0;
+                            border-radius: 10px;
+                            min-width: 400px;
+                            min-height: 200px;
+                        }
+                        QLabel {
+                            color: #333333;
+                            font-family: Arial, sans-serif;
+                        }
+                        QPushButton {
+                            background-color: #7cb342;
+                            color: white;
+                            border: none;
+                            border-radius: 5px;
+                            padding: 8px 16px;
+                            font-size: 14px;
+                        }
+                        QPushButton:hover {
+                            background-color: #8bc34a;
+                        }
+                    ''')
+                    msg_box.exec_()
+
+            # 检查是否有警告
+            if 'warning' in result:
+                QMessageBox.warning(self, '⚠️ 一致性警告', result['warning'])
+
+            # 构建完整的历史记录
             record = {
                 'image_path': self.current_image,
                 'result_path': result['image_path'],
                 'detections': result['detections'],
                 'total_count': result['total_count'],
-                'process_time': result['process_time']
+                'process_time': result['process_time'],
+                'pest_category_info': pest_category_info
             }
+            
+            # 添加级联推理的其他信息
+            if 'cascade' in result:
+                cascade_data = result['cascade']
+                record['best_match'] = cascade_data.get('best_match')
+                record['has_consistent_pest'] = cascade_data.get('has_consistent_pest')
+                record['has_any_pest'] = cascade_data.get('has_any_pest')
             self.add_to_history(record)
 
             self.db.save_detection(
@@ -663,7 +917,7 @@ class MainWindow(QMainWindow):
         self.is_camera_running = False
         self.camera_btn.setText('Real-time Detection')
         self.select_btn.setEnabled(True)
-        if self.current_image:
+        if hasattr(self, 'current_image') and self.current_image:
             self.detect_btn.setEnabled(True)
 
     def toggle_camera(self):
@@ -767,6 +1021,12 @@ class MainWindow(QMainWindow):
             self.showNormal()
         else:
             self.showFullScreen()
+
+    def toggle_cascade_mode(self, state):
+        """切换级联推理模式"""
+        self.model_service.use_cascade = bool(state)
+        mode = "Cascade Mode" if state else "Standard Mode"
+        self.statusBar().showMessage(f'{mode} Enabled | Welcome, {self.user_info["username"]}')
 
     def update_status_bar(self):
         stats = self.resource_monitor.get_current_stats()

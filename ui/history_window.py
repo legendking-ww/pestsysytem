@@ -405,151 +405,208 @@ class HistoryWindow(QWidget):
         self.stats_label.setText(f'Found: {len(filtered)} records')
 
     def show_detail(self, record):
+        """显示检测详情（优化版：大字体、高对比度、简化布局）"""
         dialog = QDialog(self)
         dialog.setWindowTitle('Detection Details')
-        dialog.setFixedSize(550, 500)
+        dialog.setFixedSize(650, 550)
         dialog.setStyleSheet("""
             QDialog {
-                background-color: transparent;
-            }
-            QWidget {
-                background-color: transparent;
+                background-color: #1a1a2e;
                 font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
             }
             QLabel {
-                color: #ffffff;
+                color: #eeeeee;
                 background-color: transparent;
             }
-        """)
-
-        main_layout = QVBoxLayout(dialog)
-        main_layout.setContentsMargins(0, 0, 0, 0)
-        main_layout.setSpacing(0)
-
-        bg_label = QLabel(dialog)
-        bg_pixmap = QPixmap(self.bg_image_path)
-        if not bg_pixmap.isNull():
-            bg_label.setPixmap(bg_pixmap.scaled(550, 500, Qt.KeepAspectRatioByExpanding, Qt.SmoothTransformation))
-        else:
-            bg_label.setStyleSheet("background-color: #1a2e1a;")
-        bg_label.setFixedSize(550, 500)
-
-        stacked_layout = QStackedLayout()
-        stacked_layout.setStackingMode(QStackedLayout.StackAll)
-        stacked_layout.addWidget(bg_label)
-
-        container = QWidget(dialog)
-        container_layout = QVBoxLayout(container)
-        container_layout.setContentsMargins(25, 25, 25, 25)
-        container_layout.setSpacing(15)
-
-        info_card = QFrame()
-        info_card.setObjectName("card")
-        info_layout = QFormLayout(info_card)
-        info_layout.setSpacing(12)
-        info_layout.setLabelAlignment(Qt.AlignRight)
-
-        labels = [
-            ('Image Name', record['image_name']),
-            ('Detection Time', str(record['time'])[:19]),
-            ('Total Targets', str(record['total']))
-        ]
-
-        for label, value in labels:
-            label_widget = QLabel(label)
-            label_widget.setStyleSheet("font-weight: 600; color: #a0a0a0;")
-            value_widget = QLabel(value)
-            value_widget.setStyleSheet("color: #ffffff; background-color: rgba(26, 26, 46, 0.9); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.1);")
-            info_layout.addRow(label_widget, value_widget)
-
-        container_layout.addWidget(info_card)
-
-        result_card = QFrame()
-        result_card.setObjectName("card")
-        result_layout = QVBoxLayout(result_card)
-
-        result_label = QLabel('Detection Results')
-        result_label.setStyleSheet("font-weight: bold; color: #7cb342; font-size: 14px; margin-bottom: 8px;")
-        result_layout.addWidget(result_label)
-
-        table = QTableWidget()
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(['No.', 'Insect Category', 'Confidence'])
-        table.horizontalHeader().setStretchLastSection(False)
-        table.setShowGrid(False)
-        table.setAlternatingRowColors(True)
-        table.setStyleSheet("""
-            QTableWidget {
-                border: 1px solid rgba(255, 255, 255, 0.1);
-                border-radius: 8px;
-                background-color: rgba(26, 26, 46, 0.9);
-                color: #eaeaea;
+            QLabel#title {
+                color: #7cb342;
+                font-size: 16px;
+                font-weight: bold;
+                border-bottom: 2px solid #7cb342;
+                padding-bottom: 5px;
             }
-            QTableWidget::item {
-                padding: 8px;
-            }
-        """)
-
-        results = record['results']
-        table.setRowCount(len(results))
-        table.setColumnWidth(0, 50)
-        table.setColumnWidth(1, 200)
-        table.setColumnWidth(2, 150)
-
-        for i, det in enumerate(results):
-            seq_item = QTableWidgetItem(str(i+1))
-            seq_item.setTextAlignment(Qt.AlignCenter)
-            table.setItem(i, 0, seq_item)
-
-            class_item = QTableWidgetItem(det['class_name'])
-            class_item.setForeground(QBrush(QColor(234, 234, 234)))
-            class_item.setFont(QFont('Segoe UI', 10))
-            table.setItem(i, 1, class_item)
-
-            confidence = det['confidence']
-            conf_item = QTableWidgetItem(f"{confidence:.2%}")
-            conf_item.setTextAlignment(Qt.AlignCenter)
-
-            if confidence >= 0.8:
-                color = '#10b981'
-            elif confidence >= 0.5:
-                color = '#f59e0b'
-            else:
-                color = '#e94560'
-
-            conf_item.setForeground(QBrush(QColor(color)))
-            conf_item.setFont(QFont('Segoe UI', 10, QFont.Bold))
-            table.setItem(i, 2, conf_item)
-
-        result_layout.addWidget(table)
-        container_layout.addWidget(result_card, 1)
-
-        btn_layout = QHBoxLayout()
-        btn_layout.addStretch()
-
-        close_btn = QPushButton('Close')
-        close_btn.setCursor(Qt.PointingHandCursor)
-        close_btn.setFixedSize(120, 40)
-        close_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #7cb342;
-                color: white;
-                border: none;
-                border-radius: 20px;
+            QLabel#label {
+                color: #aaaaaa;
                 font-size: 14px;
                 font-weight: 500;
+            }
+            QLabel#value {
+                color: #ffffff;
+                font-size: 15px;
+                font-weight: bold;
+            }
+            QFrame {
+                background-color: #16213e;
+                border: 1px solid #2a3a5c;
+                border-radius: 10px;
+            }
+            QTableWidget {
+                background-color: #0f0f1a;
+                border: 1px solid #2a3a5c;
+                border-radius: 8px;
+                font-size: 14px;
+                gridline-color: #2a3a5c;
+                alternate-background-color: #1a1a2e;
+            }
+            QTableWidget::item {
+                padding: 10px 8px;
+                color: #ffffff;
+            }
+            QTableWidget::item:selected {
+                background-color: #7cb342;
+                color: #1a1a2e;
+            }
+            QHeaderView::section {
+                background-color: #0f0f1a;
+                color: #7cb342;
+                font-size: 14px;
+                font-weight: bold;
+                padding: 10px;
+                border: none;
+                border-bottom: 2px solid #7cb342;
+            }
+            QPushButton {
+                background-color: #7cb342;
+                color: #1a1a2e;
+                border: none;
+                padding: 10px 25px;
+                border-radius: 6px;
+                font-size: 14px;
+                font-weight: bold;
             }
             QPushButton:hover {
                 background-color: #8bc34a;
             }
         """)
+
+        main_layout = QVBoxLayout(dialog)
+        main_layout.setContentsMargins(20, 20, 20, 20)
+        main_layout.setSpacing(15)
+
+        # ========== 信息区域 ==========
+        info_frame = QFrame()
+        info_layout = QVBoxLayout(info_frame)
+        info_layout.setSpacing(12)
+        info_layout.setContentsMargins(20, 15, 20, 15)
+
+        # 标题
+        title_label = QLabel('📋 检测信息')
+        title_label.setObjectName('title')
+        info_layout.addWidget(title_label)
+
+        # 图片名称行
+        name_layout = QHBoxLayout()
+        name_label = QLabel('图片名称：')
+        name_label.setObjectName('label')
+        name_label.setFixedWidth(80)
+        name_value = QLabel(record['image_name'])
+        name_value.setObjectName('value')
+        name_layout.addWidget(name_label)
+        name_layout.addWidget(name_value, 1)
+        info_layout.addLayout(name_layout)
+
+        # 检测时间行
+        time_layout = QHBoxLayout()
+        time_label = QLabel('检测时间：')
+        time_label.setObjectName('label')
+        time_label.setFixedWidth(80)
+        time_value = QLabel(str(record['time'])[:19])
+        time_value.setObjectName('value')
+        time_layout.addWidget(time_label)
+        time_layout.addWidget(time_value, 1)
+        info_layout.addLayout(time_layout)
+
+        # 目标数量行
+        count_layout = QHBoxLayout()
+        count_label = QLabel('目标数量：')
+        count_label.setObjectName('label')
+        count_label.setFixedWidth(80)
+        count_value = QLabel(str(record['total']))
+        count_value.setObjectName('value')
+        # 根据数量设置颜色
+        if record['total'] > 0:
+            count_value.setStyleSheet("color: #7cb342; font-size: 18px; font-weight: bold;")
+        else:
+            count_value.setStyleSheet("color: #e94560; font-size: 18px; font-weight: bold;")
+        count_layout.addWidget(count_label)
+        count_layout.addWidget(count_value, 1)
+        info_layout.addLayout(count_layout)
+
+        main_layout.addWidget(info_frame)
+
+        # ========== 检测结果区域 ==========
+        result_frame = QFrame()
+        result_layout = QVBoxLayout(result_frame)
+        result_layout.setSpacing(10)
+        result_layout.setContentsMargins(20, 15, 20, 15)
+
+        # 结果标题
+        result_title = QLabel('🔍 检测结果')
+        result_title.setObjectName('title')
+        result_layout.addWidget(result_title)
+
+        # 结果表格
+        table = QTableWidget()
+        table.setColumnCount(3)
+        table.setHorizontalHeaderLabels(['序号', '害虫名称', '置信度'])
+        table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Fixed)
+        table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Fixed)
+        table.setColumnWidth(0, 60)
+        table.setColumnWidth(2, 120)
+        table.setAlternatingRowColors(True)
+        table.setSelectionBehavior(QTableWidget.SelectRows)
+        table.setEditTriggers(QTableWidget.NoEditTriggers)
+
+        results = record['results']
+        table.setRowCount(len(results))
+
+        for i, det in enumerate(results):
+            # 序号
+            seq_item = QTableWidgetItem(str(i + 1))
+            seq_item.setTextAlignment(Qt.AlignCenter)
+            table.setItem(i, 0, seq_item)
+
+            # 害虫名称
+            class_item = QTableWidgetItem(det['class_name'])
+            class_item.setFont(QFont('Microsoft YaHei', 13))
+            table.setItem(i, 1, class_item)
+
+            # 置信度
+            confidence = det['confidence']
+            conf_text = f"{confidence:.1%}"
+            conf_item = QTableWidgetItem(conf_text)
+            conf_item.setTextAlignment(Qt.AlignCenter)
+            conf_item.setFont(QFont('Microsoft YaHei', 13, QFont.Bold))
+
+            # 根据置信度设置颜色
+            if confidence >= 0.8:
+                conf_item.setForeground(QBrush(QColor('#10b981')))  # 绿色
+            elif confidence >= 0.5:
+                conf_item.setForeground(QBrush(QColor('#f59e0b')))  # 橙色
+            else:
+                conf_item.setForeground(QBrush(QColor('#e94560')))  # 红色
+
+            table.setItem(i, 2, conf_item)
+
+            # 设置行高
+            table.setRowHeight(i, 45)
+
+        result_layout.addWidget(table)
+
+        main_layout.addWidget(result_frame, 1)
+
+        # ========== 底部按钮 ==========
+        btn_layout = QHBoxLayout()
+        btn_layout.addStretch()
+
+        close_btn = QPushButton('关闭')
+        close_btn.setCursor(Qt.PointingHandCursor)
+        close_btn.setFixedSize(120, 40)
         close_btn.clicked.connect(dialog.accept)
         btn_layout.addWidget(close_btn)
 
-        container_layout.addLayout(btn_layout)
-
-        stacked_layout.addWidget(container)
-        main_layout.addLayout(stacked_layout)
+        main_layout.addLayout(btn_layout)
 
         dialog.exec_()
 
